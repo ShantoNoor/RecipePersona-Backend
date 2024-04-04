@@ -49,6 +49,24 @@ app.post("/users", async (req, res) => {
   }
 });
 
+app.put("/users/:_id", async (req, res) => {
+  try {
+    const result = await User.updateOne(
+      { _id: req.params._id },
+      {
+        $set: req.body,
+      }
+    );
+    return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
 app.listen(port, () => {
   console.log(`Recipe Persona server is listening on port ${port}`);
 });
