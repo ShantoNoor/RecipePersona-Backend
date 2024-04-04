@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { config } from "dotenv";
 import mongoose from "mongoose";
+import User from "./models/User.model.js";
 
 config({
   path: ".env.local",
@@ -20,6 +21,32 @@ app.use(express.json());
 
 app.get("/", async (req, res) => {
   return res.send("Recipe Persona server is Running");
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    return res.send(await User.find(req.query));
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
+app.post("/users", async (req, res) => {
+  try {
+    const user = new User(req.body);
+    const result = await user.save();
+    return res.status(201).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(409).send("User already exists");
+    }
+  }
 });
 
 app.listen(port, () => {

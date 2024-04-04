@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const userSchema = new Schema({
-  displayName: {
+  name: {
     require: true,
     type: String,
   },
@@ -11,7 +11,7 @@ const userSchema = new Schema({
     type: String,
     unique: true,
   },
-  photoURL: {
+  photo: {
     require: false,
     type: String,
     default: "",
