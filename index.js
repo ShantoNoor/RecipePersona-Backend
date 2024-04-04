@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "dotenv";
 import mongoose from "mongoose";
 import User from "./models/User.model.js";
+import Recipe from "./models/Recipe.model.js";
 
 config({
   path: ".env.local",
@@ -58,6 +59,20 @@ app.put("/users/:_id", async (req, res) => {
       }
     );
     return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
+app.post("/recipes", async (req, res) => {
+  try {
+    const recipe = new Recipe(req.body);
+    const result = await recipe.save();
+    return res.status(201).send(result);
   } catch (err) {
     if (err.name === "ValidationError") {
       return res.status(400).send(err.message);
