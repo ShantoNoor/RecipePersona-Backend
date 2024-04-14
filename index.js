@@ -4,6 +4,7 @@ import { config } from "dotenv";
 import mongoose from "mongoose";
 import User from "./models/User.model.js";
 import Recipe from "./models/Recipe.model.js";
+import { getRecommendations } from "./RecommendationEngine.js";
 
 config({
   path: ".env.local",
@@ -80,6 +81,34 @@ app.post("/recipes", async (req, res) => {
       return res.status(500).send("Something went wrong");
     }
   }
+});
+
+app.get("/recommendations/:_id", async (req, res) => {
+  const { _id } = req.params;
+
+  // get recipe recipeData with rating from db
+  // this is only for demo
+  const recipeData = [
+    { userId: 1, recipeId: 101, rating: 3 },
+    { userId: 1, recipeId: 103, rating: 1 },
+    { userId: 1, recipeId: 105, rating: 1 },
+
+    { userId: 2, recipeId: 101, rating: 1 },
+    { userId: 2, recipeId: 103, rating: 4 },
+    { userId: 2, recipeId: 104, rating: 1 },
+
+    { userId: 3, recipeId: 101, rating: 3 },
+    { userId: 3, recipeId: 102, rating: 1 },
+    { userId: 3, recipeId: 104, rating: 3 },
+    { userId: 3, recipeId: 105, rating: 1 },
+
+    { userId: 4, recipeId: 102, rating: 3 },
+    { userId: 4, recipeId: 104, rating: 4 },
+    { userId: 4, recipeId: 105, rating: 4 },
+  ];
+
+  const result = await getRecommendations(recipeData, parseInt(_id));
+  return res.send(result);
 });
 
 app.listen(port, () => {
