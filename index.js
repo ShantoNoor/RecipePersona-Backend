@@ -43,11 +43,12 @@ app.post("/users", async (req, res) => {
     const result = await user.save();
     return res.status(201).send(result);
   } catch (err) {
-    if (err.name === "ValidationError") {
-      return res.status(400).send(err.message);
-    } else {
-      return res.status(409).send("User already exists");
+    if (err.code === 11000) {
+      return res
+        .status(201)
+        .send(await User.findOne({ email: req.body.email }));
     }
+    return res.status(err.code).send(err.message);
   }
 });
 
