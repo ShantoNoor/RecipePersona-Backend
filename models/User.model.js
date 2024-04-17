@@ -18,15 +18,15 @@ const userSchema = new Schema({
   },
   dietaryPreferences: {
     type: String,
-    default: "",
+    default: "nope",
   },
   allergies: {
-    type: String,
-    default: "",
+    type: [{ type: String }],
+    default: [],
   },
   favoriteCuisines: {
-    type: String,
-    default: "",
+    type: [{ type: String }],
+    default: [],
   },
 });
 
