@@ -70,6 +70,18 @@ app.put("/users/:_id", async (req, res) => {
   }
 });
 
+app.get("/recipes", async (req, res) => {
+  try {
+    return res.send(await Recipe.find(req.query).populate("author"));
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
 app.post("/recipes", async (req, res) => {
   try {
     const recipe = new Recipe(req.body);
