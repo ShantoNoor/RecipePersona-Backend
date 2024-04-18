@@ -96,6 +96,24 @@ app.post("/recipes", async (req, res) => {
   }
 });
 
+app.put("/recipes/:id", async (req, res) => {
+  try {
+    const result = await Recipe.updateOne(
+      { _id: req.params.id },
+      {
+        $set: req.body,
+      }
+    );
+    return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+})
+
 app.get("/recommendations/:_id", async (req, res) => {
   const { _id } = req.params;
 
