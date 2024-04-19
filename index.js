@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
-import { config } from "dotenv";
-import mongoose from "mongoose";
-import User from "./models/User.model.js";
-import Recipe from "./models/Recipe.model.js";
 import { getRecommendations } from "./RecommendationEngine.js";
 
+import { config } from "dotenv";
+import Recipe from "./models/Recipe.model.js";
+import User from "./models/User.model.js";
+import mongoose from "mongoose";
 config({
   path: ".env.local",
 });
