@@ -112,7 +112,7 @@ app.put("/recipes/:id", async (req, res) => {
       return res.status(500).send("Something went wrong");
     }
   }
-})
+});
 
 app.delete("/recipes/:id", async (req, res) => {
   try {
@@ -125,7 +125,7 @@ app.delete("/recipes/:id", async (req, res) => {
       return res.status(500).send("Something went wrong");
     }
   }
-})
+});
 
 app.get("/recommendations/:_id", async (req, res) => {
   const { _id } = req.params;
@@ -153,6 +153,15 @@ app.get("/recommendations/:_id", async (req, res) => {
 
   const result = await getRecommendations(recipeData, parseInt(_id));
   return res.send(result);
+});
+
+app.get("/home", async (req, res) => {
+  try {
+    const result = await Recipe.aggregate([{ $sample: { size: 10 } }]);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 app.listen(port, () => {
