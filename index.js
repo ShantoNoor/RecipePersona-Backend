@@ -6,6 +6,7 @@ import { config } from "dotenv";
 import Recipe from "./models/Recipe.model.js";
 import User from "./models/User.model.js";
 import mongoose from "mongoose";
+import Rating from "./models/Rating.model.js";
 config({
   path: ".env.local",
 });
@@ -153,6 +154,37 @@ app.get("/recommendations/:_id", async (req, res) => {
 
   const result = await getRecommendations(recipeData, parseInt(_id));
   return res.send(result);
+});
+
+app.get("/ratings", async (req, res) => {
+  try {
+    return res.send(await Rating.find(req.query));
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+})
+
+app.put("/ratings", async (req, res) => {
+  try {
+    const result = await Rating.updateOne(
+      { recipe: req.body.recipe, author: req.body.author },
+      {
+        $set: req.body,
+      },
+      { upsert: true }
+    );
+    return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
 });
 
 app.get("/home", async (req, res) => {
