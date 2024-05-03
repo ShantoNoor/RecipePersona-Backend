@@ -12,8 +12,8 @@ const getUniqueIds = (recipeData) => {
 export const getPredictions = async (
   recipeData,
   newRecipeData,
-  epochs = 100,
-  batchSize = 32
+  epochs = 50,
+  batchSize = 16
 ) => {
   // Extract unique userIds and recipeIds
   const { uniqueUserIds, uniqueRecipeIds } = getUniqueIds(recipeData);
@@ -84,7 +84,7 @@ export const getPredictions = async (
   }
 };
 
-export const getRecommendations = async (recipeData, userId, iter = 3) => {
+export const getRecommendations = async (recipeData, userId) => {
   const newRecipeData = recipeData
     .filter((entry) => entry.rating === 0 && entry.userId === userId)
     .map((entry) => {
@@ -94,33 +94,17 @@ export const getRecommendations = async (recipeData, userId, iter = 3) => {
       };
     });
 
-  recipeData = recipeData.filter((entry) => entry.userId !== userId || entry.rating > 0);
-
-  const predictionsArray = [];
-
-  for (let i = 0; i < iter; ++i) {
-    const predictions = await getPredictions(recipeData, newRecipeData);
-    predictionsArray.push(predictions);
-  }
-
-  // Use reduce to sum up values in each column
-  const columnSums = predictionsArray.reduce((acc, row) => {
-    row.forEach((value, index) => {
-      acc[index] = (acc[index] || 0) + value;
-    });
-    return acc;
-  }, []);
-
-  // Calculate column average
-  const predictionsAverage = columnSums.map(
-    (sum) => sum / predictionsArray.length
+  recipeData = recipeData.filter(
+    (entry) => entry.userId !== userId || entry.rating > 0
   );
+
+  const predictions = await getPredictions(recipeData, newRecipeData);
 
   // Combining recipeIds with predictedScores
   const topPredictedRecipes = newRecipeData.map((data, idx) => {
     return {
       recipeId: data.recipeId,
-      predictionScore: predictionsAverage[idx],
+      predictionScore: predictions[idx],
     };
   });
   topPredictedRecipes.sort((a, b) => b.predictionScore - a.predictionScore);
