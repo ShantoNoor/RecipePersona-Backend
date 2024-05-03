@@ -240,7 +240,29 @@ app.put("/ratings", async (req, res) => {
 
 app.get("/home", async (req, res) => {
   try {
-    const result = await Recipe.aggregate([{ $sample: { size: 10 } }]);
+    const result = await Recipe.aggregate([
+      {
+        $lookup: {
+          from: "ratings",
+          localField: "_id",
+          foreignField: "recipe",
+          as: "ratings",
+        },
+      },
+      {
+        $addFields: {
+          averageRating: {
+            $ifNull: [{ $avg: "$ratings.rating" }, 0],
+          },
+        },
+      },
+      {
+        $sort: { averageRating: -1 }, 
+      },
+      {
+        $limit: 10,
+      },
+    ]);
     return res.json(result);
   } catch (error) {
     return res.status(500).json({ error: "Internal server error" });
