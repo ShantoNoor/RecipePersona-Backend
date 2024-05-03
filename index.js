@@ -72,8 +72,53 @@ app.put("/users/:_id", async (req, res) => {
 });
 
 app.get("/recipes", async (req, res) => {
+  // try {
+  //   return res.send(await Recipe.find(req.query).populate("author"));
+  // } catch (err) {
+  //   if (err.name === "ValidationError") {
+  //     return res.status(400).send(err.message);
+  //   } else {
+  //     return res.status(500).send("Something went wrong");
+  //   }
+  // }
+  let query = req.query;
+  let filter = {};
+  if (query) {
+    filter = { ...query };
+    if (filter._id) {
+      filter._id = new mongoose.Types.ObjectId(filter._id);
+    }
+    delete filter.page; // Assuming pagination
+    delete filter.limit; // Assuming pagination
+  }
   try {
-    return res.send(await Recipe.find(req.query).populate("author"));
+    const recipesWithRatings = await Recipe.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $lookup: {
+          from: "ratings",
+          localField: "_id",
+          foreignField: "recipe",
+          as: "ratings",
+        },
+      },
+      {
+        $addFields: {
+          averageRating: {
+            $avg: "$ratings.rating",
+          },
+        },
+      },
+    ]);
+
+    const populatedRecipes = await Recipe.populate(recipesWithRatings, {
+      path: "author",
+      select: "name photo",
+    });
+
+    return res.send(populatedRecipes);
   } catch (err) {
     if (err.name === "ValidationError") {
       return res.status(400).send(err.message);
@@ -166,7 +211,7 @@ app.get("/ratings", async (req, res) => {
       return res.status(500).send("Something went wrong");
     }
   }
-})
+});
 
 app.put("/ratings", async (req, res) => {
   try {

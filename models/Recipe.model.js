@@ -53,9 +53,6 @@ const recipeSchema = new Schema(
       default: [],
       require: false,
     },
-  },
-  {
-    timestamps: true,
   }
 );
 
