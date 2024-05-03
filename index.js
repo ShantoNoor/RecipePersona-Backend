@@ -93,7 +93,7 @@ app.get("/recipes", async (req, res) => {
     if (filter.author) {
       filter.author = new mongoose.Types.ObjectId(filter.author);
     }
-    
+
     delete filter.page; // Assuming pagination
     delete filter.limit; // Assuming pagination
   }
@@ -113,7 +113,7 @@ app.get("/recipes", async (req, res) => {
       {
         $addFields: {
           averageRating: {
-            $avg: "$ratings.rating",
+            $ifNull: [{ $avg: "$ratings.rating" }, 0],
           },
         },
       },
