@@ -182,29 +182,36 @@ app.delete("/recipes/:id", async (req, res) => {
 app.get("/recommendations/:_id", async (req, res) => {
   const { _id } = req.params;
 
-  // get recipe recipeData with rating from db
-  // this is only for demo
-  const recipeData = [
-    { userId: 1, recipeId: 101, rating: 3 },
-    { userId: 1, recipeId: 103, rating: 1 },
-    { userId: 1, recipeId: 105, rating: 1 },
+  const userIds = (await User.find({})).map((user) => user._id.toString());
+  const recipeIds = (await Recipe.find({})).map((recipe) =>
+    recipe._id.toString()
+  );
+  const ratingData = (await Rating.find({})).map((rating) => {
+    return {
+      userId: rating.author._id.toString(),
+      recipeId: rating.recipe.toString(),
+      rating: rating.rating,
+    };
+  });
 
-    { userId: 2, recipeId: 101, rating: 1 },
-    { userId: 2, recipeId: 103, rating: 4 },
-    { userId: 2, recipeId: 104, rating: 1 },
+  const recipeData = createCompleteRatingData(userIds, recipeIds, ratingData);
 
-    { userId: 3, recipeId: 101, rating: 3 },
-    { userId: 3, recipeId: 102, rating: 1 },
-    { userId: 3, recipeId: 104, rating: 3 },
-    { userId: 3, recipeId: 105, rating: 1 },
+  const recommendedRecipes = await getRecommendations(recipeData, _id);
 
-    { userId: 4, recipeId: 102, rating: 3 },
-    { userId: 4, recipeId: 104, rating: 4 },
-    { userId: 4, recipeId: 105, rating: 4 },
-  ];
+  // console.log(recommendedRecipes);
 
-  const result = await getRecommendations(recipeData, parseInt(_id));
-  return res.send(result);
+  const predictedRecipeIds = recommendedRecipes.map(
+    (predictions) => predictions.recipeId
+  );
+
+  const recipes = await Recipe.find({
+    _id: { $in: predictedRecipeIds },
+  }).populate("author", "name photo");
+
+  // removing own recipe
+  const filteredRecipes = recipes.filter((recipe) => recipe.author._id.toString() !== _id)
+
+  return res.send(filteredRecipes);
 });
 
 app.get("/ratings", async (req, res) => {
@@ -257,7 +264,7 @@ app.get("/home", async (req, res) => {
         },
       },
       {
-        $sort: { averageRating: -1 }, 
+        $sort: { averageRating: -1 },
       },
       {
         $limit: 10,
@@ -272,3 +279,23 @@ app.get("/home", async (req, res) => {
 app.listen(port, () => {
   console.log(`Recipe Persona server is listening on port ${port}`);
 });
+
+function createCompleteRatingData(userIds, recipeIds, ratingData) {
+  const completeData = [];
+  const ratingsByUserRecipe = {};
+
+  // Store ratings by user-recipe combination for efficient lookup
+  ratingData.forEach((data) => {
+    ratingsByUserRecipe[`${data.userId}${data.recipeId}`] = data.rating;
+  });
+
+  for (const userId of userIds) {
+    for (const recipeId of recipeIds) {
+      const combinedId = `${userId}${recipeId}`;
+      const rating = ratingsByUserRecipe[combinedId] || 0;
+      completeData.push({ userId, recipeId, rating });
+    }
+  }
+
+  return completeData;
+}

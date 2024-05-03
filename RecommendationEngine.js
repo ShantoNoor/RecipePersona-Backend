@@ -85,31 +85,17 @@ export const getPredictions = async (
 };
 
 export const getRecommendations = async (recipeData, userId, iter = 3) => {
-  // Extract unique userIds and recipeIds
-  const { uniqueRecipeIds } = getUniqueIds(recipeData);
+  const newRecipeData = recipeData
+    .filter((entry) => entry.rating === 0 && entry.userId === userId)
+    .map((entry) => {
+      return {
+        userId: entry.userId,
+        recipeId: entry.recipeId,
+      };
+    });
 
-  // Filter recipeData based on userId
-  const filteredRecipeData = recipeData.filter(
-    (data) => data.userId === userId
-  );
+  recipeData = recipeData.filter((entry) => entry.userId !== userId || entry.rating > 0);
 
-  // Extract unique recipeIds for userId
-  const { uniqueRecipeIds: filteredUniqueRecipeIds } =
-    getUniqueIds(filteredRecipeData);
-
-  // Getting the ids of the recipes which user not rated yet.
-  // Ids of all the recipes which user may like or needs predictions.
-  const recipePredictionsIds = uniqueRecipeIds.filter(
-    (ele) => !filteredUniqueRecipeIds.includes(ele)
-  );
-
-  const newRecipeData = recipePredictionsIds.map((id) => {
-    return { userId: userId, recipeId: id };
-  });
-
-  // Store all the prediction values in every iteration
-  // then this array will be used to calculate average prediction
-  // which will result in a very accurate prediction
   const predictionsArray = [];
 
   for (let i = 0; i < iter; ++i) {
@@ -141,4 +127,3 @@ export const getRecommendations = async (recipeData, userId, iter = 3) => {
 
   return topPredictedRecipes;
 };
-
