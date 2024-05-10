@@ -7,6 +7,8 @@ import Recipe from "./models/Recipe.model.js";
 import User from "./models/User.model.js";
 import mongoose from "mongoose";
 import Rating from "./models/Rating.model.js";
+import Favorite from "./models/Favorite.model.js";
+
 config({
   path: ".env.local",
 });
@@ -72,15 +74,6 @@ app.put("/users/:_id", async (req, res) => {
 });
 
 app.get("/recipes", async (req, res) => {
-  // try {
-  //   return res.send(await Recipe.find(req.query).populate("author"));
-  // } catch (err) {
-  //   if (err.name === "ValidationError") {
-  //     return res.status(400).send(err.message);
-  //   } else {
-  //     return res.status(500).send("Something went wrong");
-  //   }
-  // }
   let query = req.query;
   let filter = {};
   if (query) {
@@ -209,7 +202,9 @@ app.get("/recommendations/:_id", async (req, res) => {
   }).populate("author", "name photo");
 
   // removing own recipe
-  const filteredRecipes = recipes.filter((recipe) => recipe.author._id.toString() !== _id)
+  const filteredRecipes = recipes.filter(
+    (recipe) => recipe.author._id.toString() !== _id
+  );
 
   return res.send(filteredRecipes);
 });
@@ -235,6 +230,62 @@ app.put("/ratings", async (req, res) => {
       },
       { upsert: true }
     );
+    return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
+app.get("/favorites", async (req, res) => {
+  try {
+    const favoriteRecipesIds = (
+      await Favorite.find(req.query).sort({ updatedAt: -1 })
+    ).map((f) => f.recipe);
+
+    const favoriteRecipes = await Recipe.find({
+      _id: { $in: favoriteRecipesIds },
+    }).populate("author", "name photo");
+    return res.send(favoriteRecipes);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
+app.put("/favorites", async (req, res) => {
+  try {
+    const result = await Favorite.updateOne(
+      { recipe: req.body.recipe, author: req.body.author },
+      {
+        $set: req.body,
+      },
+      { upsert: true }
+    );
+    return res.status(200).send(result);
+  } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).send(err.message);
+    } else {
+      return res.status(500).send("Something went wrong");
+    }
+  }
+});
+
+app.delete("/favorites/:pk", async (req, res) => {
+  const [author, recipe] = req.params.pk.split("-");
+
+  try {
+    const result = await Favorite.deleteOne({
+      author: new mongoose.Types.ObjectId(author),
+      recipe: new mongoose.Types.ObjectId(recipe),
+    });
     return res.status(200).send(result);
   } catch (err) {
     if (err.name === "ValidationError") {
