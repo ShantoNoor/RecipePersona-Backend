@@ -175,7 +175,10 @@ app.delete("/recipes/:id", async (req, res) => {
 app.get("/recommendations/:_id", async (req, res) => {
   const { _id } = req.params;
 
-  const userIds = (await User.find({})).map((user) => user._id.toString());
+  const allUsers = await User.find({});
+  const currentUser = allUsers.filter((user) => user._id.toString() === _id)[0];
+
+  const userIds = allUsers.map((user) => user._id.toString());
   const recipeIds = (await Recipe.find({})).map((recipe) =>
     recipe._id.toString()
   );
@@ -201,12 +204,34 @@ app.get("/recommendations/:_id", async (req, res) => {
     _id: { $in: predictedRecipeIds },
   }).populate("author", "name photo");
 
-  // removing own recipe
-  const filteredRecipes = recipes.filter(
-    (recipe) => recipe.author._id.toString() !== _id
-  );
+  // removing own recipe and allergic recipes
+  const filteredRecipes = recipes.filter((recipe) => {
+    // finding common allergicIngredients between recipes and user's preferences
+    const common = findIntersection(
+      recipe.allergicIngredients,
+      currentUser.allergies
+    );
 
-  return res.send(filteredRecipes);
+    if (common.length !== 0) return false; // if have a common allergic ingredients then not including it
+
+    return recipe.author._id.toString() !== _id;
+  });
+
+  // making sure favorite cuisines are at the top of the list 
+  const finalRecipes = filteredRecipes.map((recipe) => {
+    const newRecipe = { ...recipe.toObject(), score: 0 };
+
+    if (currentUser.favoriteCuisines.includes(recipe.cuisine)) {
+      newRecipe.score += 1;
+    }
+
+    return newRecipe;
+  });
+
+  finalRecipes.sort((a, b) => b.score - a.score);
+  // console.log(finalRecipes)
+
+  return res.send(finalRecipes);
 });
 
 app.get("/ratings", async (req, res) => {
@@ -330,6 +355,12 @@ app.get("/home", async (req, res) => {
 app.listen(port, () => {
   console.log(`Recipe Persona server is listening on port ${port}`);
 });
+
+function findIntersection(arr1, arr2) {
+  // Filter elements from arr1 that are also present in arr2
+  if (arr1.length === 0 || arr2.length === 0) return [];
+  return arr1.filter((item) => arr2.includes(item));
+}
 
 function createCompleteRatingData(userIds, recipeIds, ratingData) {
   const completeData = [];

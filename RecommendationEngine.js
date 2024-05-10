@@ -12,8 +12,8 @@ const getUniqueIds = (recipeData) => {
 export const getPredictions = async (
   recipeData,
   newRecipeData,
-  epochs = 50,
-  batchSize = 16
+  epochs = 20,
+  batchSize = 32
 ) => {
   // Extract unique userIds and recipeIds
   const { uniqueUserIds, uniqueRecipeIds } = getUniqueIds(recipeData);
