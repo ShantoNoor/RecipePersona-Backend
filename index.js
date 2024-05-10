@@ -217,12 +217,66 @@ app.get("/recommendations/:_id", async (req, res) => {
     return recipe.author._id.toString() !== _id;
   });
 
-  // making sure favorite cuisines are at the top of the list 
+  // making sure favorite cuisines are at the top of the list and dietaryPreferences are accounted as well
   const finalRecipes = filteredRecipes.map((recipe) => {
     const newRecipe = { ...recipe.toObject(), score: 0 };
 
     if (currentUser.favoriteCuisines.includes(recipe.cuisine)) {
       newRecipe.score += 1;
+    }
+
+    if (currentUser.dietaryPreferences === "non-veg") {
+      if (
+        recipe.allergicIngredients.includes("meat") ||
+        recipe.allergicIngredients.includes("fish")
+      ) {
+        newRecipe.score += 1;
+      }
+    } else if (currentUser.dietaryPreferences === "veg-noMeat-noEgg") {
+      if (
+        recipe.allergicIngredients.includes("meat") ||
+        recipe.allergicIngredients.includes("fish") ||
+        recipe.allergicIngredients.includes("egg")
+      ) {
+        newRecipe.score -= 1;
+      }
+    } else if (
+      currentUser.dietaryPreferences === "veg-noMeat-noDairyProductucs"
+    ) {
+      if (
+        recipe.allergicIngredients.includes("meat") ||
+        recipe.allergicIngredients.includes("fish") ||
+        recipe.allergicIngredients.includes("milk")
+      ) {
+        newRecipe.score -= 1;
+      }
+    } else if (
+      currentUser.dietaryPreferences === "veg-noMeat-egg-dairyProductucs"
+    ) {
+      if (
+        recipe.allergicIngredients.includes("meat") ||
+        recipe.allergicIngredients.includes("fish")
+      ) {
+        newRecipe.score -= 1;
+      }
+      if (
+        recipe.allergicIngredients.includes("egg") ||
+        recipe.allergicIngredients.includes("milk")
+      ) {
+        newRecipe.score -= 1;
+      }
+      {
+        newRecipe.score += 1;
+      }
+    } else if (currentUser.dietaryPreferences === "vegan") {
+      if (
+        recipe.allergicIngredients.includes("meat") ||
+        recipe.allergicIngredients.includes("fish") ||
+        recipe.allergicIngredients.includes("milk") ||
+        recipe.allergicIngredients.includes("egg")
+      ) {
+        newRecipe.score -= 1;
+      }
     }
 
     return newRecipe;
